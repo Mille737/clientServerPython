@@ -7,7 +7,7 @@ print("Your Computer Name is:" + hostname)
 print("Your Computer IP Address is: " + IPAddr)
 server_address = ('localhost', 10000)
 counter = 0
-sent = sock.sendto('Connection Request'.encode(), server_address)
+sent = sock.sendto('com-0'.encode() + IPAddr.encode(), server_address)
 # Receive Connection
 data, server = sock.recvfrom(4096)
 print('Client Sends: Connection Request')
@@ -20,10 +20,10 @@ while True:
     message = input("\nEnter message: ")
     clientmsg = 'msg-'
     # Send data
-    print(' {}'.format(message), 'To Server', counter)
     sent = sock.sendto(clientmsg.encode() + str(counter).encode() + b'=' + message.encode(), server_address)
     counter += 1
     # Receive response
     data, server = sock.recvfrom(4096)
-    print('Server Responds: {}'.format(data.decode()), counter)
+    data = data.split(b'=', 1)
+    print('{}'.format(data[1].decode()))
     counter += 1
