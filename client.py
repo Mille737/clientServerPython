@@ -2,7 +2,7 @@ import socket
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 hostname = socket.gethostname()
-IPAddr = socket.gethostbyname(hostname)
+IPAddr = socket.gethostbyname("")
 print("Your Computer Name is:" + hostname)
 print("Your Computer IP Address is: " + IPAddr + '\n')
 server_address = ('localhost', 10000)
@@ -19,7 +19,7 @@ while True:
     message = input("\nEnter message: ")
     clientmsg = 'msg-'
     # Send data
-    sent = sock.sendto(clientmsg.encode() + str(counter).encode() + b'=' + message.encode(), server_address)
+    sock.sendto(clientmsg.encode() + str(counter).encode() + b'= ' + message.encode(), server_address)
     counter += 1
     # Receive response
     data, server = sock.recvfrom(4096)
