@@ -6,7 +6,7 @@ server_address = ('localhost', 10000)
 print('starting up on {} port {}'.format(*server_address))
 sock.bind(server_address)
 hostname = socket.gethostname()
-IPAddr = socket.gethostbyname("")
+IPAddr = socket.gethostbyname(hostname)
 i = 0
 checkcounter = 0
 

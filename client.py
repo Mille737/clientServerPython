@@ -2,7 +2,7 @@ import socket
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 hostname = socket.gethostname()
-IPAddr = socket.gethostbyname("")
+IPAddr = socket.gethostbyname(hostname)
 print("Your Computer Name is:" + hostname)
 print("Your Computer IP Address is: " + IPAddr + '\n')
 server_address = ('localhost', 10000)
