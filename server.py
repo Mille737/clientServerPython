@@ -7,39 +7,58 @@ print('starting up on {} port {}'.format(*server_address))
 sock.bind(server_address)
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname(hostname)
-i = 0
-checkcounter = 0
+message_count = 0
+
+
+def handshake():
+    print('\nWaiting to receive message from Client:')
+    data, address = sock.recvfrom(10000)
+    data = data.decode()
+    print('C: ' + data)
+
+    x = data.split(' ', 1)
+    if data.startswith('com-0') and socket.inet_aton(x[1]):
+        reply = 'com-0 accept ' + IPAddr
+        sock.sendto(reply.encode(), address)
+        print('S: ' + reply)
+        check_counter = 1
+
+    print('\nWaiting to receive message from Client:')
+    data, address = sock.recvfrom(10000)
+    data = data.decode()
+    print('C: ' + data)
+
+    if check_counter == 1 and data == 'com-0 accept':
+        return True
+    else:
+        return False
+
+
+def message_communication():
+    if data.startswith('msg-'):
+        x = data.split('-')
+        y = x[1].split('=')
+        global message_count
+        if int(y[0]) == message_count:
+            message_count += 1
+            reply = 'res-' + str(message_count) + '= ' + 'I am server'
+            print('S: ' + reply)
+            message_count += 1
+            sock.sendto(reply.encode(), address)
+        else:
+            print('Error')
+    else:
+        print('Error in data.')
+
+
+isHandshaken = handshake()
+
 
 while True:
     print('\nWaiting to receive message from Client:')
     data, address = sock.recvfrom(10000)
-    # print('received {} bytes from {}'.format(len(data), address))
     data = data.decode()
-    print('C: ' + data)
-    if data.startswith('com-0'):
-        x = data.split(' ', 1)
-        y = (x[1].split('.', 3))
-        if checkcounter == 1 and data == 'com-0 accept':
-            checkcounter += 1
-        elif (0 <= int(y[0]) <= 255) and (0 <= int(y[1]) <= 255) and (0 <= int(y[2]) <= 255) and (0 <= int(y[3]) <= 255):
-            reply = 'com-0 accept ' + IPAddr
-            sock.sendto(reply.encode(), address)
-            print('S: ' + reply)
-            checkcounter += 1
-        else:
-            print('IP error.')
-    elif data.startswith('msg-'):
-        if checkcounter < 2:
-            print('Unapproved message: connection disabled.')
-            break
-        if data[4] == str(i):
-            i += 1
-            reply = 'res-' + str(i) + '= ' + 'I am server'
-            print('S: ' + reply)
-            i += 1
-            sent = sock.sendto(reply.encode(), address)
-        # print('sent {} bytes back to {}'.format(sent, address))
-    else:
-        print('Error in data.')
-
+    print('C : ' + data)
+    if isHandshaken:
+        message_communication()
 

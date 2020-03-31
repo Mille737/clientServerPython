@@ -10,7 +10,10 @@ counter = 0
 sock.sendto('com-0 '.encode() + IPAddr.encode(), server_address)
 # Receive Connection
 data, server = sock.recvfrom(4096)
-sock.sendto('com-0 accept'.encode(), server_address)
+data = data.decode()
+x = data.split(' ', 2)
+if data.startswith('com-0 accept') and socket.inet_aton(x[2]):
+    sock.sendto('com-0 accept'.encode(), server_address)
 
 print('Start Chat')
 
