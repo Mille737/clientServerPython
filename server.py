@@ -10,6 +10,8 @@ sock.bind(server_address)
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname('localhost')
 message_count = 0
+sock.settimeout(4)
+package_counter = 0
 
 
 def currenttime():
@@ -35,18 +37,21 @@ def handshake():
     print('C: ' + hs_data)
 
     log = open('Log.txt', 'a')
-    log.write("Handshake successful : " + str(check_counter) + "\n")
+    log.write("Handshake successful : " + str(currenttime()) + "\n")
     log.close()
 
     if check_counter == 1 and hs_data == 'com-0 accept':
         return True
     else:
+        log = open('Log.txt', 'a')
+        log.write("Handshake unsuccessful : " + str(currenttime()) + "\n")
+        log.close()
         return False
 
 
 def message_communication():
-    if data.startswith('msg-'):
-        x = data.split('-')
+    if data.decode().startswith('msg-'):
+        x = data.decode().split('-')
         y = x[1].split('=')
         global message_count
         if int(y[0]) == message_count:
@@ -61,28 +66,39 @@ def message_communication():
         print('Error in data.')
 
 
+def package_count():
+    global package_counter
+    package_counter += 1
+    print(package_counter)
+    if package_counter >= 25:
+        max_pac = 'Maximum 25 packages allowed'
+        sock.sendto(max_pac.encode(), address)
+        print(max_pac)
+        sock.close()
+        exit()
+
+
 isHandshaken = handshake()
 
 while isHandshaken:
-    sock.settimeout(4)
-    print('\nWaiting to receive message from Client:')
-    data, address = sock.recvfrom(10000)
-    data = data.decode()
+    try:
+        print('\nWaiting to receive message from Client:')
+        data, address = sock.recvfrom(10000)
 
-    if data == 'con-h 0x00':
-        print('Heartbeat')
-    else:
-        print('C : ' + data)
-        message_communication()
-    # If no messages received before 4 seconds disconnect client
-except socket.timeout:
+        if data.decode() == 'maxpackages' or 'com-0 127.0.0.1':
+            package_count()
+        elif data.decode() == 'con-h 0x00':
+            print('Heartbeat')
+        else:
+            message_communication()
+            print('C : ' + data.decode())
 
-    inactive_msg = 'con-res 0xFE'
-    inactive_resp = sock.sendto(inactive_msg.encode(), address)
+    except socket.timeout:
+        inactive_msg = 'con-res 0xFE'
+        sock.sendto(inactive_msg.encode(), address)
 
-    messages_inactive, address = sock.recvfrom(4096)
-    inactive_resp_client = messages_inactive.decode()
-    if inactive_resp_client == 'con-res 0xFF':
+        messages_inactive, address = sock.recvfrom(4096)
+        inactive_resp_client = messages_inactive.decode()
         print("Client disconnected for inactivity " + inactive_resp_client)
         sock.close()
         exit()

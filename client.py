@@ -1,19 +1,23 @@
+import multiprocessing
 import socket
 import threading
 from configparser import ConfigParser
 
 # Create a UDP socket
+from multiprocessing.spawn import freeze_support
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname('localhost')
-print("Your Computer Name is:" + hostname)
-print("Your Computer IP Address is: " + IPAddr + '\n')
+# print("Your Computer Name is:" + hostname)
+# print("Your Computer IP Address is: " + IPAddr + '\n')
 server_address = ('localhost', 10000)
 counter = 0
 
 # read configuration file
 parser = ConfigParser()
 parser.read('configuration.ini')
+max_packages = parser.getboolean('MaximumPackages', 'Start')
 
 sock.sendto('com-0 '.encode() + IPAddr.encode(), server_address)
 # Receive Connection
@@ -36,8 +40,31 @@ def heartbeat():
         exit()
 
 
-print('Start Chat')
+def maxpackages():
+
+    while max_packages:
+
+        print("maxpackages")
+        # Loop to send amount from config file of msg to server
+        for x in range(parser.getint('MaximumPackages', 'MaximumPackages')):
+            if __name__ == '__main__':
+                freeze_support()
+
+                msg = 'maxpackages'
+                mp = multiprocessing.Process(target=sock.sendto, args=(msg.encode(), server_address))
+                mp.start()
+        resp, server = sock.recvfrom(4096)
+        print('closing because of message overload')
+        print(resp.decode())
+        sock.close()
+        exit()
+        # break
+
+
+maxpackages()
+
 heartbeat()
+print('Start Chat')
 
 while True:
     # Sending Message to Server
@@ -51,6 +78,7 @@ while True:
     if str(data) == 'con-res 0xFE':
         disconnectionmsg = 'con-res 0xFF'
         sock.sendto(disconnectionmsg.encode(), server_address)
+        sock.close()
         exit()
     else:
         data = data.split(b'=', 1)
