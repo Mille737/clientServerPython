@@ -25,6 +25,7 @@ def handshake():
     print('C: ' + hs_data)
 
     x = hs_data.split(' ', 1)
+    check_counter = -1
     if hs_data.startswith('com-0') and socket.inet_aton(x[1]):
         reply = 'com-0 accept ' + IPAddr
         sock.sendto(reply.encode(), hs_address)
@@ -36,16 +37,17 @@ def handshake():
     hs_data = hs_data.decode()
     print('C: ' + hs_data)
 
-    log = open('Log.txt', 'a')
-    log.write("Handshake successful : " + str(currenttime()) + "\n")
-    log.close()
-
     if check_counter == 1 and hs_data == 'com-0 accept':
+        log = open('Log.txt', 'a')
+        log.write("Handshake successful : " + str(currenttime()) + "\n")
+        log.close()
         return True
     else:
         log = open('Log.txt', 'a')
         log.write("Handshake unsuccessful : " + str(currenttime()) + "\n")
         log.close()
+        sock.sendto("Handshake unsuccessful".encode(), hs_address)
+        print("Handshake unsuccessful")
         return False
 
 
@@ -72,6 +74,7 @@ def package_count():
     print(package_counter)
     if package_counter >= 25:
         max_pac = 'Maximum 25 packages allowed'
+        time.sleep(5)
         sock.sendto(max_pac.encode(), address)
         print(max_pac)
         sock.close()
@@ -85,9 +88,9 @@ while isHandshaken:
         print('\nWaiting to receive message from Client:')
         data, address = sock.recvfrom(10000)
 
-        if data.decode() == 'maxpackages' or 'com-0 127.0.0.1':
-            package_count()
-        elif data.decode() == 'con-h 0x00':
+       #  if data.decode() == 'maxpackages' or 'com-0 127.0.0.1':
+           # package_count()
+        if data.decode() == 'con-h 0x00':
             print('Heartbeat')
         else:
             message_communication()
