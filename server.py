@@ -1,7 +1,10 @@
 import socket
+import threading
 import time
 
 # Create a UDP socket
+from configparser import ConfigParser
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # Bind the socket to the port
 server_address = ('localhost', 10000)
@@ -12,6 +15,11 @@ IPAddr = socket.gethostbyname('localhost')
 message_count = 0
 sock.settimeout(4)
 package_counter = 0
+parser = ConfigParser()
+parser.read('configuration.ini')
+max_packages = parser.getboolean('MaximumPackages', 'Start')
+spam_count = 0
+no_spam_detected = True
 
 
 def currenttime():
@@ -41,6 +49,9 @@ def handshake():
         log = open('Log.txt', 'a')
         log.write("Handshake successful : " + str(currenttime()) + "\n")
         log.close()
+        t2 = threading.Thread(target=check_for_spam)
+        t2.start()
+        reset_spam()
         return True
     else:
         log = open('Log.txt', 'a')
@@ -52,6 +63,8 @@ def handshake():
 
 
 def message_communication():
+    global spam_count
+    print(spam_count)
     if data.decode().startswith('msg-'):
         x = data.decode().split('-')
         y = x[1].split('=')
@@ -68,33 +81,35 @@ def message_communication():
         print('Error in data.')
 
 
-def package_count():
-    global package_counter
-    package_counter += 1
-    print(package_counter)
-    if package_counter >= 25:
-        max_pac = 'Maximum 25 packages allowed'
-        time.sleep(5)
-        sock.sendto(max_pac.encode(), address)
-        print(max_pac)
-        sock.close()
-        exit()
+def check_for_spam():
+    while True:
+        global spam_count
+        if spam_count > int(max_packages):
+            global no_spam_detected
+            no_spam_detected = False
+
+
+def reset_spam():
+    threading.Timer(1.0, reset_spam).start()
+    global spam_count
+    spam_count = 0
+    global no_spam_detected
+    no_spam_detected = True
 
 
 isHandshaken = handshake()
 
 while isHandshaken:
     try:
-        print('\nWaiting to receive message from Client:')
-        data, address = sock.recvfrom(10000)
+        while no_spam_detected:
+            print('\nWaiting to receive message from Client:')
+            data, address = sock.recvfrom(10000)
 
-       #  if data.decode() == 'maxpackages' or 'com-0 127.0.0.1':
-           # package_count()
-        if data.decode() == 'con-h 0x00':
-            print('Heartbeat')
-        else:
-            message_communication()
-            print('C : ' + data.decode())
+            if data.decode() == 'con-h 0x00':
+                print('Heartbeat')
+            else:
+                message_communication()
+                print('C : ' + data.decode())
 
     except socket.timeout:
         inactive_msg = 'con-res 0xFE'

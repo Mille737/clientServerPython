@@ -57,16 +57,14 @@ def maxpackages():
 
         resp, server = sock.recvfrom(4096)
         print('closing because of message overload')
-        print(resp.decode())
         sock.close()
         exit()
         # break
 
 
-maxpackages()
-
 heartbeat()
 print('Start Chat')
+maxpackages()
 
 while True:
     # Sending Message to Server
