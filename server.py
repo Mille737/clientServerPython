@@ -5,15 +5,16 @@ import time
 # Create a UDP socket
 from configparser import ConfigParser
 
+import self as self
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # Bind the socket to the port
-server_address = ('localhost', 10000)
+server_address = ('localhost', 4096)
 print('starting up on {} port {}'.format(*server_address))
 sock.bind(server_address)
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname('localhost')
 message_count = 0
-sock.settimeout(4)
 package_counter = 0
 parser = ConfigParser()
 parser.read('configuration.ini')
@@ -28,9 +29,9 @@ def currenttime():
 
 def handshake():
     print('\nWaiting to receive message from Client:')
-    hs_data, hs_address = sock.recvfrom(10000)
+    hs_data, hs_address = sock.recvfrom(4096)
     hs_data = hs_data.decode()
-    print('C: ' + hs_data)
+    print('C test: ' + hs_data)
 
     x = hs_data.split(' ', 1)
     check_counter = -1
@@ -41,7 +42,7 @@ def handshake():
         check_counter = 1
 
     print('\nWaiting to receive message from Client:')
-    hs_data, hs_address = sock.recvfrom(10000)
+    hs_data, hs_address = sock.recvfrom(4096)
     hs_data = hs_data.decode()
     print('C: ' + hs_data)
 
@@ -64,6 +65,7 @@ def handshake():
 
 def message_communication():
     global spam_count
+    spam_count += 1
     print(spam_count)
     if data.decode().startswith('msg-'):
         x = data.decode().split('-')
@@ -74,7 +76,8 @@ def message_communication():
             reply = 'res-' + str(message_count) + '= ' + 'I am server'
             print('S: ' + reply)
             message_count += 1
-            sock.sendto(reply.encode(), address)
+            sock.sendto(reply.encode(), s_address)
+            print('C : ' + data.decode())
         else:
             print('Error')
     else:
@@ -87,6 +90,9 @@ def check_for_spam():
         if spam_count > int(max_packages):
             global no_spam_detected
             no_spam_detected = False
+            print("Spam detected.")
+            sock.close()
+            exit()
 
 
 def reset_spam():
@@ -100,22 +106,23 @@ def reset_spam():
 isHandshaken = handshake()
 
 while isHandshaken:
+    sock.settimeout(4)
+    global s_address
     try:
-        while no_spam_detected:
-            print('\nWaiting to receive message from Client:')
-            data, address = sock.recvfrom(10000)
+        print('\nWaiting to receive message from Client:')
+        data, s_address = sock.recvfrom(4096)
+        if no_spam_detected:
 
-            if data.decode() == 'con-h 0x00':
+            if data.decode().startswith('con-h 0x00'):
                 print('Heartbeat')
             else:
                 message_communication()
-                print('C : ' + data.decode())
 
     except socket.timeout:
         inactive_msg = 'con-res 0xFE'
-        sock.sendto(inactive_msg.encode(), address)
+        sock.sendto(inactive_msg.encode(), s_address)
 
-        messages_inactive, address = sock.recvfrom(4096)
+        messages_inactive, s_address = sock.recvfrom(4096)
         inactive_resp_client = messages_inactive.decode()
         print("Client disconnected for inactivity " + inactive_resp_client)
         sock.close()

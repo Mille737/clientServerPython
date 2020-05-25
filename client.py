@@ -12,7 +12,7 @@ hostname = socket.gethostname()
 IPAddr = socket.gethostbyname('localhost')
 print("Your Computer Name is:" + hostname)
 print("Your Computer IP Address is: " + IPAddr + '\n')
-server_address = ('localhost', 10000)
+server_address = ('localhost', 4096)
 counter = 0
 
 # read configuration file
@@ -41,46 +41,25 @@ def heartbeat():
         exit()
 
 
-def maxpackages():
-
-    while max_packages:
-
-        # print("maxpackages")
-        # Loop to send amount from config file of msg to server
-        for x in range(parser.getint('MaximumPackages', 'MaximumPackages')):
-            if __name__ == '__main__':
-                freeze_support()
-
-                msg = 'maxpackages'
-                mp = multiprocessing.Process(target=sock.sendto, args=(msg.encode(), server_address))
-                mp.start()
-
-        resp, server = sock.recvfrom(4096)
-        print('closing because of message overload')
-        sock.close()
-        exit()
-        # break
-
-
 heartbeat()
 print('Start Chat')
-maxpackages()
+# maxpackages()
 
 while True:
-    # Sending Message to Server
-    message = input("\nEnter message: ")
-    clientmsg = 'msg-'
-    # Send data
-    sock.sendto(clientmsg.encode() + str(counter).encode() + b'= ' + message.encode(), server_address)
-    counter += 1
-    # Receive response
-    data, server = sock.recvfrom(4096)
     if str(data) == 'con-res 0xFE':
         disconnectionmsg = 'con-res 0xFF'
         sock.sendto(disconnectionmsg.encode(), server_address)
         sock.close()
-        exit()
+
     else:
+        # Sending Message to Server
+        message = input("\nEnter message: ")
+        clientmsg = 'msg-'
+        # Send data
+        sock.sendto(clientmsg.encode() + str(counter).encode() + b'= ' + message.encode(), server_address)
+        counter += 1
+        # Receive response
+        data, server = sock.recvfrom(4096)
         data = data.split(b'=', 1)
         print('{}'.format(data[1].decode()))
         counter += 1
